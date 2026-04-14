@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>YenNhi-English_高校1年生</title>
+
+<style>
+body { font-family: Arial; padding: 20px; }
+table { border-collapse: collapse; width: 100%; margin-top: 10px; }
+th, td { border: 1px solid #ccc; padding: 6px; }
+th { background: #f0f0f0; }
+tr.active { background-color: #ffeeba; }
+button { margin: 5px; padding: 10px; }
+</style>
+</head>
+
+<body>
+
+<h2>📘 Section1_２０２６年４月</h2>
+
+<button onclick="play()">▶️ Play</button>
+<button onclick="pause()">⏸ Pause</button>
+<button onclick="resume()">▶️ Resume</button>
+<button onclick="stop()">⏹ Stop</button>
+
+<table id="table">
+<thead>
+<tr>
+<th>No</th>
+<th>Word</th>
+<th>IPA</th>
+<th>Type</th>
+<th>Meaning VI</th>
+<th>Meaning JP</th>
+<th>Example</th>
+</tr>
+</thead>
+<tbody></tbody>
+</table>
+
+<script>
+const data = [
+["lie","/laɪ/","自動詞","nằm","横になる","I lie on the bed."],
+["lay","/leɪ/","他動詞","đặt","置く","I lay the book on the table."],
+["rise","/raɪz/","自動詞","tăng lên","上がる","Prices rise."],
+["raise","/reɪz/","他動詞","nâng lên","上げる","They raise prices."],
+["grow","/ɡroʊ/","自動詞","phát triển","成長する","Children grow fast."],
+["bring","/brɪŋ/","他動詞","mang đến","持ってくる","She brings food."],
+["exist","/ɪɡˈzɪst/","自動詞","tồn tại","存在する","Life exists here."],
+["participate","/pɑːrˈtɪsɪpeɪt/","自動詞","tham gia","参加する","I participate in the event."],
+["evolve","/ɪˈvɑːlv/","自動詞","tiến hóa","進化する","Species evolve."],
+["dive","/daɪv/","自動詞","lặn","潜る","He dives into water."],
+["leap","/liːp/","自動詞","nhảy","跳ぶ","The cat leaps."],
+["arrive","/əˈraɪv/","自動詞","đến","到着する","They arrive early."],
+["depart","/dɪˈpɑːrt/","自動詞","rời đi","出発する","The train departs."],
+["sleep","/sliːp/","自動詞","ngủ","眠る","I sleep well."],
+["walk","/wɔːk/","自動詞","đi bộ","歩く","She walks daily."],
+["hurry","/ˈhɜːri/","自動詞","vội","急ぐ","We hurry up."],
+["return","/rɪˈtɜːrn/","自動詞","trở về","戻る","He returns home."],
+["travel","/ˈtrævəl/","自動詞","du lịch","旅行する","They travel a lot."],
+["appear","/əˈpɪr/","自動詞","xuất hiện","現れる","He appears suddenly."],
+["stare","/ster/","自動詞","nhìn chằm chằm","じっと見る","She stares at me."],
+["rain","/reɪn/","自動詞","mưa","雨が降る","It rains today."],
+["snow","/snoʊ/","自動詞","tuyết rơi","雪が降る","It snows in winter."],
+["become","/bɪˈkʌm/","連結動詞","trở nên","〜になる","He becomes strong."],
+["turn","/tɜːrn/","連結動詞","trở thành","〜になる","Leaves turn yellow."],
+["come","/kʌm/","自動詞","đến","来る","Come here."],
+["go","/ɡoʊ/","自動詞","đi","行く","I go home."],
+["fall","/fɔːl/","自動詞","rơi","落ちる","Leaves fall."],
+["prove","/pruːv/","他動詞","chứng minh","証明する","He proves it."],
+["look","/lʊk/","連結動詞","trông có vẻ","〜のように見える","You look tired."],
+["seem","/siːm/","連結動詞","có vẻ","〜のように思われる","She seems happy."],
+["sound","/saʊnd/","連結動詞","nghe có vẻ","〜のように聞こえる","That sounds good."],
+["smell","/smel/","連結動詞","có mùi","〜の匂いがする","It smells nice."],
+["taste","/teɪst/","連結動詞","có vị","〜の味がする","It tastes sweet."],
+["stay","/steɪ/","連結動詞","giữ nguyên","〜のままでいる","Stay calm."],
+["remain","/rɪˈmeɪn/","連結動詞","vẫn còn","依然として〜","He remains silent."],
+["believe","/bɪˈliːv/","他動詞","tin","信じる","I believe you."],
+["argue","/ˈɑːrɡjuː/","他動詞","tranh luận","議論する","They argue the case."],
+["indicate","/ˈɪndɪkeɪt/","他動詞","chỉ ra","示す","Data indicates growth."],
+["imply","/ɪmˈplaɪ/","他動詞","ám chỉ","暗示する","He implies something."],
+["estimate","/ˈestɪmeɪt/","他動詞","ước tính","見積もる","They estimate cost."],
+["reach","/riːtʃ/","他動詞","đạt tới","達する","We reach the goal."],
+["visit","/ˈvɪzɪt/","他動詞","thăm","訪れる","I visit my friend."],
+["enter","/ˈentər/","他動詞","vào","入る","He enters the room."],
+["approach","/əˈproʊtʃ/","他動詞","tiếp cận","近づく","They approach the car."],
+["join","/dʒɔɪn/","他動詞","tham gia","参加する","I join the team."],
+["attend","/əˈtend/","他動詞","tham dự","出席する","She attends a meeting."],
+["answer","/ˈænsər/","他動詞","trả lời","答える","He answers the question."],
+["marry","/ˈmæri/","他動詞","kết hôn","結婚する","She marries him."]
+];
+
+// render table
+const tbody = document.querySelector("#table tbody");
+data.forEach((row, i) => {
+    let tr = document.createElement("tr");
+    tr.innerHTML = `<td>${i+1}</td>` + row.map(c => `<td>${c}</td>`).join("");
+    tbody.appendChild(tr);
+});
+
+let isPaused = false;
+let isStopped = false;
+const synth = window.speechSynthesis;
+
+function getVoice(lang) {
+    return synth.getVoices().find(v => v.lang.includes(lang));
+}
+
+function speak(text, lang) {
+    return new Promise(resolve => {
+        let utter = new SpeechSynthesisUtterance(text);
+        utter.voice = getVoice(lang);
+        utter.onend = () => setTimeout(resolve, 2000);
+        synth.speak(utter);
+    });
+}
+
+async function play() {
+    isStopped = false;
+    isPaused = false;
+
+    let rows = document.querySelectorAll("#table tbody tr");
+
+    for (let i = 0; i < rows.length; i++) {
+
+        if (isStopped) break;
+
+        while (isPaused) {
+            await new Promise(r => setTimeout(r, 200));
+        }
+
+        rows[i].classList.add("active");
+
+        let word = rows[i].cells[1].innerText;
+        let jp = rows[i].cells[5].innerText;
+		let example = rows[i].cells[6].innerText;
+        
+		await speak(word, "en-GB");
+        await speak(jp, "ja-JP");
+		await speak(example, "en-GB"); // đọc ví dụ (UK)
+		
+        rows[i].classList.remove("active");
+    }
+}
+
+function pause() {
+    isPaused = true;
+    synth.pause();
+}
+
+function resume() {
+    isPaused = false;
+    synth.resume();
+}
+
+function stop() {
+    isStopped = true;
+    synth.cancel();
+}
+</script>
+
+</body>
+</html>
