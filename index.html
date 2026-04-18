@@ -23,6 +23,17 @@ button { margin: 5px; padding: 10px; }
 <button onclick="resume()">▶️ Resume</button>
 <button onclick="stop()">⏹ Stop</button>
 
+<!-- 🔥 SPEED + SHADOW -->
+<br>
+Speed EN:
+<input type="range" id="speedSlider" min="0.2" max="1.2" step="0.1" value="0.5">
+<span id="speedValue">1.0</span>
+
+<label>
+  <input type="checkbox" id="shadowMode">
+  Shadowing Mode
+</label>
+
 <table id="table">
 <thead>
 <tr>
@@ -39,6 +50,7 @@ button { margin: 5px; padding: 10px; }
 </table>
 
 <script>
+// ===== DATA =====
 const data = [
 ["lie","/laɪ/","自動詞","nằm","横になる","I lie on the bed."],
 ["lay","/leɪ/","他動詞","đặt","置く","I lay the book on the table."],
@@ -98,63 +110,105 @@ data.forEach((row, i) => {
     tbody.appendChild(tr);
 });
 
-let isPaused = false;
-let isStopped = false;
-const synth = window.speechSynthesis;
+// ===== SPEED =====
+const speedSlider = document.getElementById("speedSlider");
+const speedValue = document.getElementById("speedValue");
 
+speedSlider.oninput = () => {
+    speedValue.innerText = speedSlider.value;
+};
+
+function getRate(){
+    return parseFloat(speedSlider.value);
+}
+
+// ===== VOICE =====
+const synth = window.speechSynthesis;
 function getVoice(lang) {
     return synth.getVoices().find(v => v.lang.includes(lang));
 }
 
+// ===== SPEAK NORMAL =====
 function speak(text, lang) {
     return new Promise(resolve => {
         let utter = new SpeechSynthesisUtterance(text);
         utter.voice = getVoice(lang);
+
+        if(lang.includes("en")){
+            utter.rate = getRate();
+        } else {
+            utter.rate = 1;
+        }
+
         utter.onend = () => setTimeout(resolve, 2000);
         synth.speak(utter);
     });
 }
 
-async function play() {
-    isStopped = false;
-    isPaused = false;
+// ===== SHADOWING =====
+const shadowRates = [0.2, 0.5, 1.0];
 
-    let rows = document.querySelectorAll("#table tbody tr");
+async function speakShadow(text, lang){
+    if(!lang.includes("en") || !document.getElementById("shadowMode").checked){
+        return speak(text, lang);
+    }
 
-    for (let i = 0; i < rows.length; i++) {
+    for(let r of shadowRates){
+        await new Promise(resolve=>{
+            let u = new SpeechSynthesisUtterance(text);
+            u.voice = getVoice(lang);
+            u.rate = r;
+            u.onend = () => setTimeout(resolve, 1000);
+            synth.speak(u);
+        });
+    }
 
-        if (isStopped) break;
+    await new Promise(r=>setTimeout(r,2000));
+}
 
-        while (isPaused) {
-            await new Promise(r => setTimeout(r, 200));
+// ===== CONTROL =====
+let isPaused=false;
+let isStopped=false;
+
+async function play(){
+    isStopped=false;
+    isPaused=false;
+
+    let rows=document.querySelectorAll("#table tbody tr");
+
+    for(let i=0;i<rows.length;i++){
+        if(isStopped) break;
+
+        while(isPaused){
+            await new Promise(r=>setTimeout(r,200));
         }
 
         rows[i].classList.add("active");
 
-        let word = rows[i].cells[1].innerText;
-        let jp = rows[i].cells[5].innerText;
-		let example = rows[i].cells[6].innerText;
-        
-		await speak(word, "en-GB");
-        await speak(jp, "ja-JP");
-		await speak(example, "en-GB"); // đọc ví dụ (UK)
-		
+        let word=rows[i].cells[1].innerText;
+        let jp=rows[i].cells[5].innerText;
+        let ex=rows[i].cells[6].innerText;
+
+        await speakShadow(word,"en-GB");
+        await speak(jp,"ja-JP");
+        await speakShadow(ex,"en-GB");
+
         rows[i].classList.remove("active");
     }
 }
 
-function pause() {
-    isPaused = true;
+function pause(){
+    isPaused=true;
     synth.pause();
 }
 
-function resume() {
-    isPaused = false;
+function resume(){
+    isPaused=false;
     synth.resume();
 }
 
-function stop() {
-    isStopped = true;
+function stop(){
+    isStopped=true;
     synth.cancel();
 }
 </script>
