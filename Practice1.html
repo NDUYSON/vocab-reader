@@ -50,7 +50,7 @@ async function loadData(){
       .trim()
       .replace(/^\ufeff/, "")     // bỏ BOM nếu có
       .split(/\r?\n/)             // tách dòng
-      .map(r => r.split(";"));    // QUAN TRỌNG: tách bằng dấu ;
+      .map(r => r.split(","));    // QUAN TRỌNG: tách bằng dấu ;
 
     const tbody = document.querySelector("#table tbody");
     tbody.innerHTML = "";
