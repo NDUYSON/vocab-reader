@@ -146,7 +146,33 @@ function speak(text, lang){
     synth.speak(u);
   });
 }
+async function play() {
+    isStopped = false;
+    isPaused = false;
 
+    let rows = document.querySelectorAll("#table tbody tr");
+
+    for (let i = 0; i < rows.length; i++) {
+
+        if (isStopped) break;
+
+        while (isPaused) {
+            await new Promise(r => setTimeout(r, 200));
+        }
+
+        rows[i].classList.add("active");
+
+        let word = rows[i].cells[1].innerText;
+        let jp = rows[i].cells[5].innerText;
+		let example = rows[i].cells[6].innerText;
+        
+		await speak(word, "en-GB");
+        await speak(jp, "ja-JP");
+		await speak(example, "en-GB"); // đọc ví dụ (UK)
+		
+        rows[i].classList.remove("active");
+    }
+}
 // ===== PRACTICE =====
 const countSelect = document.getElementById("count");
 for(let i=1;i<=data.length;i++){
@@ -246,7 +272,7 @@ function finish(){
 function shareToGoogle(){
   const FORM_URL="https://docs.google.com/forms/d/e/1FAIpQLSfMzeKxzFSCFXu6ang3xAtBXe4WxtABD5O3ET2wq7WLA_Cyvg/formResponse";
 
-  const user="NP＿YENNHI";
+  const user="YENNHI";
 
   results.forEach(r=>{
     let url=FORM_URL+
