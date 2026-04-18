@@ -1,62 +1,81 @@
-<table border=1>
-  <tr><th>Word</th><th>Input</th><th>Result</th><th>Time</th></tr><tr>
-    <td>lie</td>
-    <td>lie</td>
-    <td>✅</td>
-    <td>2026/4/18 12:29:12</td>
-    </tr><tr>
-    <td>approach</td>
-    <td>approch</td>
-    <td>❌</td>
-    <td>2026/4/18 12:29:29</td>
-    </tr><tr>
-    <td>imply</td>
-    <td>imply</td>
-    <td>✅</td>
-    <td>2026/4/18 12:29:39</td>
-    </tr><tr>
-    <td>participate</td>
-    <td>participate</td>
-    <td>✅</td>
-    <td>2026/4/18 12:29:54</td>
-    </tr><tr>
-    <td>indicate</td>
-    <td>da</td>
-    <td>❌</td>
-    <td>2026/4/18 12:30:00</td>
-    </tr><tr>
-    <td>grow</td>
-    <td>a</td>
-    <td>❌</td>
-    <td>2026/4/18 12:36:45</td>
-    </tr><tr>
-    <td>lie</td>
-    <td>lue</td>
-    <td>❌</td>
-    <td>2026/4/18 12:43:48</td>
-    </tr><tr>
-    <td>lie</td>
-    <td>lie</td>
-    <td>✅</td>
-    <td>2026/4/18 12:43:58</td>
-    </tr><tr>
-    <td>lay</td>
-    <td>lay</td>
-    <td>✅</td>
-    <td>2026/4/18 12:44:03</td>
-    </tr><tr>
-    <td>rise</td>
-    <td>rise</td>
-    <td>✅</td>
-    <td>2026/4/18 12:46:29</td>
-    </tr><tr>
-    <td>lay</td>
-    <td>lay</td>
-    <td>✅</td>
-    <td>2026/4/18 12:46:34</td>
-    </tr><tr>
-    <td>lie</td>
-    <td>lie</td>
-    <td>✅</td>
-    <td>2026/4/18 12:46:38</td>
-    </tr></table>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Practice Result Dashboard</title>
+
+<style>
+body { font-family: Arial; padding: 20px; }
+table { border-collapse: collapse; width: 100%; margin-top: 20px; }
+th, td { border: 1px solid #ccc; padding: 6px; text-align: center; }
+th { background: #f0f0f0; }
+.correct { color: green; font-weight: bold; }
+.wrong { color: red; font-weight: bold; }
+button { padding: 10px; margin: 10px 0; cursor: pointer; }
+</style>
+</head>
+
+<body>
+
+<h2>📊 Practice Result Dashboard</h2>
+
+<button onclick="loadData()">Load Result</button>
+
+<table id="table">
+<thead>
+<tr>
+<th>TestNo</th>
+<th>User</th>
+<th>Word</th>
+<th>Result</th>
+<th>Time</th>
+</tr>
+</thead>
+<tbody></tbody>
+</table>
+
+<script>
+const SHEET_URL =
+ "https://docs.google.com/spreadsheets/d/e/2PACX-1vR8ag7GCVICQ2UODNv-BTisrWEmzj3COzlb1CIt9BUzPHO5qwB-PPPTVPTY-X9-D9x6xnHg-MEn2ucI/pub?gid=293872461&single=true&output=csv";
+
+async function loadData(){
+  try {
+    const res = await fetch(SHEET_URL);
+    const text = await res.text();
+
+    console.log("RAW CSV:", text); // debug nếu cần
+
+    // Google Sheets (locale JP/VN) xuất CSV bằng dấu ;
+    const rows = text
+      .trim()
+      .replace(/^\ufeff/, "")     // bỏ BOM nếu có
+      .split(/\r?\n/)             // tách dòng
+      .map(r => r.split(";"));    // QUAN TRỌNG: tách bằng dấu ;
+
+    const tbody = document.querySelector("#table tbody");
+    tbody.innerHTML = "";
+
+    // bỏ header
+    rows.slice(1).forEach(r => {
+      if (r.length < 6) return; // đảm bảo đủ cột
+
+      const tr = document.createElement("tr");
+      tr.innerHTML = `
+        <td>${r[1]}</td>
+        <td>${r[2]}</td>
+        <td>${r[3]}</td>
+        <td class="${r[4] === 'Correct' ? 'correct' : 'wrong'}">${r[4]}</td>
+        <td>${r[5]}</td>
+      `;
+      tbody.appendChild(tr);
+    });
+
+  } catch (err) {
+    console.error(err);
+    alert("Không tải được dữ liệu CSV.");
+  }
+}
+</script>
+
+</body>
+</html>
