@@ -5,62 +5,13 @@
 <title>Practice Result Dashboard</title>
 
 <style>
-body { 
-  font-family: Arial; 
-  padding: 20px; 
-  background: #fafafa;
-}
-
-h2 {
-  margin-bottom: 10px;
-}
-
-button { 
-  padding: 10px 18px; 
-  background: #0078ff; 
-  color: white; 
-  border: none; 
-  border-radius: 6px;
-  cursor: pointer; 
-  font-size: 15px;
-}
-
-button:hover {
-  background: #005fcc;
-}
-
-table { 
-  border-collapse: collapse; 
-  width: 100%; 
-  margin-top: 20px; 
-  background: white;
-}
-
-th { 
-  background: #eaeaea; 
-  padding: 8px; 
-  border: 1px solid #ccc; 
-}
-
-td { 
-  padding: 8px; 
-  border: 1px solid #ccc; 
-  text-align: center; 
-}
-
-.correct { 
-  color: green; 
-  font-weight: bold; 
-}
-
-.wrong { 
-  color: red; 
-  font-weight: bold; 
-}
-
-tr:nth-child(even) {
-  background: #f7f7f7;
-}
+body { font-family: Arial; padding: 20px; }
+table { border-collapse: collapse; width: 100%; margin-top: 20px; }
+th, td { border: 1px solid #ccc; padding: 6px; text-align: center; }
+th { background: #f0f0f0; }
+.correct { color: green; font-weight: bold; }
+.wrong { color: red; font-weight: bold; }
+button { padding: 10px; margin: 10px 0; cursor: pointer; }
 </style>
 </head>
 
@@ -84,85 +35,39 @@ tr:nth-child(even) {
 </table>
 
 <script>
-// --- CSV URL qua AllOrigins để chạy được trên iPhone + GitHub Pages ---
-const CSV_URL =
- "https://api.allorigins.win/raw?url=" +
- encodeURIComponent(
-   "https://docs.google.com/spreadsheets/d/e/2PACX-1vR8ag7GCVICQ2UODNv-BTisrWEmzj3COzlb1CIt9BUzPHO5qwB-PPPTVPTY-X9-D9x6xnHg-MEn2ucI/pub?gid=293872461&single=true&output=csv"
- );
+const SHEET_URL =
+ "https://docs.google.com/spreadsheets/d/e/2PACX-1vR8ag7GCVICQ2UODNv-BTisrWEmzj3COzlb1CIt9BUzPHO5qwB-PPPTVPTY-X9-D9x6xnHg-MEn2ucI/pub?gid=293872461&single=true&output=csv";
 
 async function loadData(){
   try {
-    const res = await fetch(CSV_URL);
+    const res = await fetch(SHEET_URL);
     const text = await res.text();
 
-    console.log("RAW CSV:\n" + text);
+    console.log("RAW CSV:", text); // debug nếu cần
 
+    // Google Sheets (locale JP/VN) xuất CSV bằng dấu ;
     const rows = text
       .trim()
-      .replace(/^\ufeff/, "")
-      .split(/\r?\n/)
-      .map(r => r.split(","));   // CSV dùng dấu phẩy
+      .replace(/^\ufeff/, "")     // bỏ BOM nếu có
+      .split(/\r?\n/)             // tách dòng
+      .map(r => r.split(","));    // QUAN TRỌNG: tách bằng dấu ;
 
     const tbody = document.querySelector("#table tbody");
     tbody.innerHTML = "";
 
-    // --- BƯỚC 1: NHÓM THEO TESTNO ---
-    let testGroups = {};
+    // bỏ header
     rows.slice(1).forEach(r => {
-      if (r.length < 6) return;
-      const testNo = r[1];
-      if (!testGroups[testNo]) testGroups[testNo] = [];
-      testGroups[testNo].push(r);
-    });
+      if (r.length < 6) return; // đảm bảo đủ cột
 
-    // --- BƯỚC 2: RENDER THEO TỪNG TESTNO ---
-    Object.keys(testGroups).forEach(testNo => {
-      const group = testGroups[testNo];
-      const testRowspan = group.length;
-
-      // --- NHÓM THEO USER TRONG TESTNO ---
-      let userGroups = {};
-      group.forEach(r => {
-        const user = r[2];
-        if (!userGroups[user]) userGroups[user] = [];
-        userGroups[user].push(r);
-      });
-
-      let isFirstTestRow = true;
-
-      // --- RENDER USER GROUP ---
-      Object.keys(userGroups).forEach(user => {
-        const uGroup = userGroups[user];
-        const userRowspan = uGroup.length;
-
-        let isFirstUserRow = true;
-
-        uGroup.forEach(r => {
-          const tr = document.createElement("tr");
-
-          // MERGE TestNo
-          if (isFirstTestRow) {
-            tr.innerHTML += `<td rowspan="${testRowspan}">${testNo}</td>`;
-            isFirstTestRow = false;
-          }
-
-          // MERGE User
-          if (isFirstUserRow) {
-            tr.innerHTML += `<td rowspan="${userRowspan}">${user}</td>`;
-            isFirstUserRow = false;
-          }
-
-          // Các cột còn lại
-          tr.innerHTML += `
-            <td>${r[3]}</td>
-            <td class="${r[4] === 'Correct' ? 'correct' : 'wrong'}">${r[4]}</td>
-            <td>${r[5]}</td>
-          `;
-
-          tbody.appendChild(tr);
-        });
-      });
+      const tr = document.createElement("tr");
+      tr.innerHTML = `
+        <td>${r[1]}</td>
+        <td>${r[2]}</td>
+        <td>${r[3]}</td>
+        <td class="${r[4] === 'Correct' ? 'correct' : 'wrong'}">${r[4]}</td>
+        <td>${r[5]}</td>
+      `;
+      tbody.appendChild(tr);
     });
 
   } catch (err) {
