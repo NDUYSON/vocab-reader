@@ -27,7 +27,7 @@ button { margin: 5px; padding: 10px; }
 
 Speed EN:
 <input type="range" id="speedSlider" min="0.2" max="1.2" step="0.1" value="0.5">
-<span id="speedValue">1.0</span>
+<span id="speedValue">0.5</span>
 
 <label>
   <input type="checkbox" id="shadowMode">
@@ -63,7 +63,7 @@ Số từ:
 <select id="count"></select>
 
 <button onclick="startPractice()">▶ Start</button>
-<button onclick="exportHTML()">📄 Export</button>
+<button onclick="shareToGoogle()">📤 練習結果提出</button>
 
 <div id="practiceBox"></div>
 <div id="stats"></div>
@@ -122,7 +122,7 @@ const data = [
 ["marry","/ˈmæri/","他動詞","kết hôn","結婚する","She marries him."]
 ];
 
-// ===== RENDER TABLE =====
+// render table
 const tbody = document.querySelector("#table tbody");
 data.forEach((row, i) => {
     let tr = document.createElement("tr");
@@ -156,25 +156,13 @@ for(let i=1;i<=data.length;i++){
 }
 
 let list=[], index=0, results=[];
+let testNo = parseInt(localStorage.getItem("testNo")||"0");
 
 function startPractice(){
-  let mode=document.getElementById("mode").value;
-  let history=JSON.parse(localStorage.getItem("history")||"[]");
-
-  if(mode==="wrong"){
-    let wrongWords = history.filter(x=>!x.correct).map(x=>x.word);
-    list = data.filter(d=>wrongWords.includes(d[0]));
-  }else{
-    list = [...data];
-  }
-
   let count = parseInt(countSelect.value);
 
-  // ✅ chỉ lấy từ 1 → count
-  list = list.slice(0, count);
-
-  // ✅ random trong phạm vi đó
-  list = list.sort(()=>Math.random()-0.5);
+  list = data.slice(0, count); // chỉ lấy từ 1 → count
+  list = list.sort(()=>Math.random()-0.5); // random trong phạm vi
 
   index=0;
   results=[];
@@ -191,7 +179,7 @@ function nextQ(){
 
   document.getElementById("practiceBox").innerHTML=`
     <h3>JP: ${item[4]}</h3>
-    <input id="input" placeholder="Type English word">
+    <input id="input">
     <button onclick="check()">Check</button>
     <span id="res" style="margin-left:10px; font-weight:bold;"></span>
   `;
@@ -202,15 +190,14 @@ function check(){
   let correct=list[index][0].toLowerCase();
 
   let ok = input===correct;
-
-  const resEl = document.getElementById("res");
+  let resEl=document.getElementById("res");
 
   if(ok){
-    resEl.innerHTML = "✅";
-    resEl.style.color = "green";
+    resEl.innerHTML="✅";
+    resEl.style.color="green";
   }else{
-    resEl.innerHTML = "❌ → " + correct;
-    resEl.style.color = "red";
+    resEl.innerHTML="❌ → "+correct;
+    resEl.style.color="red";
   }
 
   results.push({
@@ -225,40 +212,54 @@ function check(){
 }
 
 function finish(){
-  let correct = results.filter(r=>r.correct).length;
-  let percent = Math.round(correct/results.length*100);
+  testNo++;
+  localStorage.setItem("testNo",testNo);
 
-  document.getElementById("stats").innerHTML =
-    `Score: ${correct}/${results.length} (${percent}%)`;
+  let correct=results.filter(r=>r.correct).length;
+  let percent=Math.round(correct/results.length*100);
 
-  let history = JSON.parse(localStorage.getItem("history")||"[]");
+  let html=`Test #${testNo} | Score: ${correct}/${results.length} (${percent}%)`;
+
+  html+=`<table border=1>
+  <tr><th>Word</th><th>Your Answer</th><th>Result</th></tr>`;
+
+  results.forEach(r=>{
+    html+=`<tr>
+    <td>${r.word}</td>
+    <td>${r.input}</td>
+    <td style="color:${r.correct?"green":"red"}">
+      ${r.correct?"✅":"❌"}
+    </td>
+    </tr>`;
+  });
+
+  html+="</table>";
+
+  document.getElementById("stats").innerHTML=html;
+
+  let history=JSON.parse(localStorage.getItem("history")||"[]");
   history.push(...results);
   localStorage.setItem("history",JSON.stringify(history));
 }
 
-// ===== EXPORT =====
-function exportHTML(){
-  let history = JSON.parse(localStorage.getItem("history")||"[]");
+// ===== SHARE =====
+function shareToGoogle(){
+  const FORM_URL="https://docs.google.com/forms/d/e/1FAIpQLSfMzeKxzFSCFXu6ang3xAtBXe4WxtABD5O3ET2wq7WLA_Cyvg/formResponse";
 
-  let html = `<table border=1>
-  <tr><th>Word</th><th>Input</th><th>Result</th><th>Time</th></tr>`;
+  const user="NP＿YENNHI";
 
-  history.forEach(r=>{
-    html+=`<tr>
-    <td>${r.word}</td>
-    <td>${r.input}</td>
-    <td>${r.correct?"✅":"❌"}</td>
-    <td>${r.time}</td>
-    </tr>`;
+  results.forEach(r=>{
+    let url=FORM_URL+
+    "?entry.1209538915="+testNo+
+    "&entry.196067690="+user+
+    "&entry.1453610014="+r.word+
+    "&entry.215126678="+(r.correct?"Correct":"Wrong")+
+    "&entry.1436083569="+r.time;
+
+    fetch(url,{method:"GET",mode:"no-cors"});
   });
 
-  html+=`</table>`;
-
-  let blob=new Blob([html],{type:"text/html"});
-  let a=document.createElement("a");
-  a.href=URL.createObjectURL(blob);
-  a.download="Practice.html";
-  a.click();
+  alert("この練習結果を記録しました。ありがとうね、また頑張ろう！！！");
 }
 
 </script>
