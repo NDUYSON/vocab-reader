@@ -18,19 +18,12 @@ th { background: #f0f0f0; }
   max-width: 500px;
 }
 
-button {
-  padding: 10px;
-  margin: 10px 0;
-  cursor: pointer;
-}
 </style>
 </head>
 
 <body>
 
-<h2>📊 Practice Result Dashboard</h2>
-
-<button onclick="loadData()">Load Result</button>
+<h2>📊 YENNHIの英単語練習記録情報</h2>
 
 <table id="table">
 <thead>
@@ -60,7 +53,6 @@ async function loadData(){
       .split(/\r?\n/)
       .map(r => r.split(","));
 
-    // ===== GROUP BY TESTNO =====
     let map = {};
 
     rows.slice(1).forEach(r => {
@@ -81,11 +73,7 @@ async function loadData(){
         };
       }
 
-      map[testNo].words.push({
-        word,
-        result
-      });
-
+      map[testNo].words.push({ word, result });
       map[testNo].total++;
 
       if(result === "Correct"){
@@ -94,17 +82,14 @@ async function loadData(){
 
     });
 
-    // ===== RENDER =====
     const tbody = document.querySelector("#table tbody");
     tbody.innerHTML = "";
 
-    Object.keys(map).sort((a,b)=>a-b).forEach(testNo => {
+    Object.keys(map).sort((a,b)=>b-a).forEach(testNo => {
 
       let obj = map[testNo];
-
       let percent = Math.round(obj.correct / obj.total * 100);
 
-      // build word list
       let wordHTML = obj.words.map(w => {
         return `<span class="${w.result==='Correct'?'correct':'wrong'}">
           ${w.word} (${w.result==='Correct'?'✅':'❌'})
@@ -121,7 +106,6 @@ async function loadData(){
       `;
 
       tbody.appendChild(tr);
-
     });
 
   }catch(err){
@@ -129,6 +113,9 @@ async function loadData(){
     alert("Không tải được dữ liệu");
   }
 }
+
+// ✅ AUTO LOAD
+window.onload = loadData;
 
 </script>
 
