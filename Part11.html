@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<title>YenNhi-English_高校1年生</title>
+<title>YenNhi-English</title>
 
 <style>
 body { font-family: Arial; padding: 20px; }
@@ -16,8 +16,8 @@ button { margin: 5px; padding: 10px; }
 
 <body>
 
-<h2>📘 Part1: 文法 x 単語</h2>
-<h3>📘 Section1 動詞と文例、自制</h3>
+<h2>📘 Vocabulary</h2>
+
 <button onclick="play()">▶️ Play</button>
 <button onclick="pause()">⏸ Pause</button>
 <button onclick="resume()">▶️ Resume</button>
@@ -25,14 +25,9 @@ button { margin: 5px; padding: 10px; }
 
 <br>
 
-Speed EN:
-<input type="range" id="speedSlider" min="0.2" max="1.2" step="0.1" value="0.5">
-<span id="speedValue">0.5</span>
-
-<label>
-  <input type="checkbox" id="shadowMode">
-  Shadowing Mode
-</label>
+Speed:
+<input type="range" id="speedSlider" min="0.5" max="1.2" step="0.1" value="0.8">
+<span id="speedValue">0.8</span>
 
 <table id="table">
 <thead>
@@ -51,19 +46,25 @@ Speed EN:
 
 <hr>
 
-<h2>🧠 Practice PRO</h2>
+<h2>🧠 Practice</h2>
 
-練習モード:
+Mode:
 <select id="mode">
-  <option value="all">すべて単語</option>
-  <option value="wrong">Wrong words only</option>
+  <option value="all">すべて単語を練習する</option>
+  <option value="wrong">よく間違った単語のみを練習する</option>
+  <option value="random">すべて単語のランダムに練習する</option>
 </select>
 
-練習したい単語数:
-<select id="count"></select>
+From:
+<select id="from"></select>
 
-<button onclick="startPractice()">▶ Start</button>
-<button onclick="shareToGoogle()">📤 練習結果提出</button>
+To:
+<select id="to"></select>
+
+<br><br>
+
+<button onclick="startPractice()">▶ 練習開始</button>
+<button onclick="shareToGoogle()">📤 練習結果を記録する</button>
 
 <div id="practiceBox"></div>
 <div id="stats"></div>
@@ -195,109 +196,116 @@ const data = [
 ["wish","/wɪʃ/","他動詞","ước","願う","I wish happiness."]
 ];
 
-// render table
+// ===== RENDER =====
 const tbody = document.querySelector("#table tbody");
-data.forEach((row, i) => {
-    let tr = document.createElement("tr");
-    tr.innerHTML = `<td>${i+1}</td>` + row.map(c => `<td>${c}</td>`).join("");
+
+function renderTable(){
+  tbody.innerHTML="";
+  data.forEach((row,i)=>{
+    let tr=document.createElement("tr");
+    tr.innerHTML=`<td>${i+1}</td>`+row.map(c=>`<td>${c}</td>`).join("");
     tbody.appendChild(tr);
-});
+  });
+}
+renderTable();
+
+// ===== RANGE =====
+const fromSel=document.getElementById("from");
+const toSel=document.getElementById("to");
+
+for(let i=1;i<=data.length;i++){
+  fromSel.innerHTML+=`<option value="${i}">${i}</option>`;
+  toSel.innerHTML+=`<option value="${i}">${i}</option>`;
+}
 
 // ===== SPEED =====
-const speedSlider = document.getElementById("speedSlider");
-const speedValue = document.getElementById("speedValue");
-speedSlider.oninput = () => speedValue.innerText = speedSlider.value;
+const speedSlider=document.getElementById("speedSlider");
+const speedValue=document.getElementById("speedValue");
+speedSlider.oninput=()=>speedValue.innerText=speedSlider.value;
+
 function getRate(){ return parseFloat(speedSlider.value); }
 
-// ===== SPEECH CONTROL =====
-const synth = window.speechSynthesis;
-let isPaused = false;
-let isStopped = false;
-let currentUtterance = null;
+// ===== SPEECH =====
+const synth=window.speechSynthesis;
+let isPaused=false;
+let isStopped=false;
 
-function speak(text, lang){
+function speak(text,lang){
   return new Promise(resolve=>{
     if(isStopped) return resolve();
 
-    const u = new SpeechSynthesisUtterance(text);
-    u.lang = lang;
+    let u=new SpeechSynthesisUtterance(text);
+    u.lang=lang;
+    u.rate=lang.includes("en")?getRate():1;
 
-    if(lang.includes("en")) u.rate = getRate();
-    else u.rate = 1;
-
-    currentUtterance = u;
-
-    u.onend = ()=> setTimeout(resolve, 500);
+    u.onend=()=>setTimeout(resolve,400);
     synth.speak(u);
   });
 }
 
-// ===== CONTROL BUTTONS =====
-function pause(){
-  isPaused = true;
-  synth.pause();
-}
-
-function resume(){
-  isPaused = false;
-  synth.resume();
-}
-
-function stop(){
-  isStopped = true;
-  synth.cancel();
-}
+// ===== CONTROL =====
+function pause(){ isPaused=true; synth.pause(); }
+function resume(){ isPaused=false; synth.resume(); }
+function stop(){ isStopped=true; synth.cancel(); }
 
 // ===== PLAY =====
-async function play() {
-    isStopped = false;
-    isPaused = false;
+async function play(){
+  isStopped=false;
+  isPaused=false;
 
-    let rows = document.querySelectorAll("#table tbody tr");
+  let rows=document.querySelectorAll("#table tbody tr");
 
-    for (let i = 0; i < rows.length; i++) {
+  for(let i=0;i<rows.length;i++){
 
-        if (isStopped) break;
+    if(isStopped) break;
 
-        while (isPaused) {
-            await new Promise(r => setTimeout(r, 200));
-        }
-
-        rows[i].classList.add("active");
-
-        let word = rows[i].cells[1].innerText;
-        let jp = rows[i].cells[5].innerText;
-        let example = rows[i].cells[6].innerText;
-
-        // ✅ WORD → US
-        await speak(word, "en-US");
-
-        // ✅ JP → Japanese
-        await speak(jp, "ja-JP");
-
-        // ✅ EXAMPLE → US
-        await speak(example, "en-US");
-
-        rows[i].classList.remove("active");
+    while(isPaused){
+      await new Promise(r=>setTimeout(r,200));
     }
+
+    rows[i].classList.add("active");
+
+    let word=rows[i].cells[1].innerText;
+    let jp=rows[i].cells[5].innerText;
+    let ex=rows[i].cells[6].innerText;
+
+    await speak(word,"en-US");
+    await speak(jp,"ja-JP");
+    await speak(ex,"en-US");
+
+    rows[i].classList.remove("active");
+  }
 }
 
 // ===== PRACTICE =====
-const countSelect = document.getElementById("count");
-for(let i=1;i<=data.length;i++){
-  let op=document.createElement("option");
-  op.value=i; op.text=i;
-  countSelect.appendChild(op);
-}
-
 let list=[], index=0, results=[];
-let testNo = parseInt(localStorage.getItem("testNo")||"0");
+let testNo=parseInt(localStorage.getItem("testNo")||"0");
 
 function startPractice(){
-  let count = parseInt(countSelect.value);
 
-  list = data.slice(0, count);
-  list = list.sort(()=>Math.random()-0.5);
+  let mode=document.getElementById("mode").value;
+  let from=parseInt(fromSel.value)-1;
+  let to=parseInt(toSel.value);
+
+  if(mode==="all"){
+    if(from>=to){
+      alert("From phải nhỏ hơn To");
+      return;
+    }
+    list=data.slice(from,to);
+  }
+
+  else if(mode==="random"){
+    list=[...data];
+  }
+
+  else if(mode==="wrong"){
+    let history=JSON.parse(localStorage.getItem("history")||"[]");
+    let wrongWords=history.filter(x=>!x.correct).map(x=>x.word);
+    list=data.filter(d=>wrongWords.includes(d[0]));
+  }
+
+  list=list.sort(()=>Math.random()-0.5);
 
   index=0;
   results=[];
@@ -313,10 +321,10 @@ function nextQ(){
   let item=list[index];
 
   document.getElementById("practiceBox").innerHTML=`
-    <h3>JP: ${item[4]}</h3>
+    <h3>${item[4]}</h3>
     <input id="input">
     <button onclick="check()">Check</button>
-    <span id="res" style="margin-left:10px; font-weight:bold;"></span>
+    <span id="res" style="margin-left:10px;font-weight:bold;"></span>
   `;
 }
 
@@ -324,15 +332,16 @@ function check(){
   let input=document.getElementById("input").value.trim().toLowerCase();
   let correct=list[index][0].toLowerCase();
 
-  let ok = input===correct;
-  let resEl=document.getElementById("res");
+  let ok=input===correct;
+
+  let res=document.getElementById("res");
 
   if(ok){
-    resEl.innerHTML="✅";
-    resEl.style.color="green";
+    res.innerHTML="✅";
+    res.style.color="green";
   }else{
-    resEl.innerHTML="❌ → "+correct;
-    resEl.style.color="red";
+    res.innerHTML="❌ → "+correct;
+    res.style.color="red";
   }
 
   results.push({
@@ -353,19 +362,18 @@ function finish(){
   let correct=results.filter(r=>r.correct).length;
   let percent=Math.round(correct/results.length*100);
 
-  let html=`Test #${testNo} | Score: ${correct}/${results.length} (${percent}%)`;
+  let html=`Test #${testNo} | ${correct}/${results.length} (${percent}%)`;
 
   html+=`<table border=1>
-  <tr><th>Word</th><th>Your Answer</th><th>Result</th></tr>`;
+  <tr><th>Word</th><th>Answer</th><th>Result</th></tr>`;
 
   results.forEach(r=>{
     html+=`<tr>
     <td>${r.word}</td>
     <td>${r.input}</td>
     <td style="color:${r.correct?"green":"red"}">
-      ${r.correct?"✅":"❌"}
-    </td>
-    </tr>`;
+    ${r.correct?"✅":"❌"}
+    </td></tr>`;
   });
 
   html+="</table>";
@@ -379,6 +387,7 @@ function finish(){
 
 // ===== SHARE =====
 function shareToGoogle(){
+
   const FORM_URL="https://docs.google.com/forms/d/e/1FAIpQLSfMzeKxzFSCFXu6ang3xAtBXe4WxtABD5O3ET2wq7WLA_Cyvg/formResponse";
   const user="YENNHI";
 
@@ -393,7 +402,7 @@ function shareToGoogle(){
     fetch(url,{method:"GET",mode:"no-cors"});
   });
 
-  alert("この練習結果を記録しました。ありがとうね、また頑張ろう！！！");
+  alert("Saved!");
 }
 
 </script>
