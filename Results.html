@@ -7,11 +7,22 @@
 <style>
 body { font-family: Arial; padding: 20px; }
 table { border-collapse: collapse; width: 100%; margin-top: 20px; }
-th, td { border: 1px solid #ccc; padding: 6px; text-align: center; }
+th, td { border: 1px solid #ccc; padding: 8px; text-align: center; }
 th { background: #f0f0f0; }
+
 .correct { color: green; font-weight: bold; }
 .wrong { color: red; font-weight: bold; }
-button { padding: 10px; margin: 10px 0; cursor: pointer; }
+
+.wordList {
+  text-align: left;
+  max-width: 500px;
+}
+
+button {
+  padding: 10px;
+  margin: 10px 0;
+  cursor: pointer;
+}
 </style>
 </head>
 
@@ -25,9 +36,8 @@ button { padding: 10px; margin: 10px 0; cursor: pointer; }
 <thead>
 <tr>
 <th>TestNo</th>
-<th>User</th>
-<th>Word</th>
-<th>Result</th>
+<th>Word Results</th>
+<th>Accuracy</th>
 <th>Time</th>
 </tr>
 </thead>
@@ -35,46 +45,91 @@ button { padding: 10px; margin: 10px 0; cursor: pointer; }
 </table>
 
 <script>
+
 const SHEET_URL =
- "https://docs.google.com/spreadsheets/d/e/2PACX-1vR8ag7GCVICQ2UODNv-BTisrWEmzj3COzlb1CIt9BUzPHO5qwB-PPPTVPTY-X9-D9x6xnHg-MEn2ucI/pub?gid=293872461&single=true&output=csv";
+"https://docs.google.com/spreadsheets/d/e/2PACX-1vR8ag7GCVICQ2UODNv-BTisrWEmzj3COzlb1CIt9BUzPHO5qwB-PPPTVPTY-X9-D9x6xnHg-MEn2ucI/pub?gid=293872461&single=true&output=csv";
 
 async function loadData(){
-  try {
+  try{
     const res = await fetch(SHEET_URL);
     const text = await res.text();
 
-    console.log("RAW CSV:", text); // debug nếu cần
-
-    // Google Sheets (locale JP/VN) xuất CSV bằng dấu ;
     const rows = text
       .trim()
-      .replace(/^\ufeff/, "")     // bỏ BOM nếu có
-      .split(/\r?\n/)             // tách dòng
-      .map(r => r.split(","));    // QUAN TRỌNG: tách bằng dấu ;
+      .replace(/^\ufeff/, "")
+      .split(/\r?\n/)
+      .map(r => r.split(","));
 
+    // ===== GROUP BY TESTNO =====
+    let map = {};
+
+    rows.slice(1).forEach(r => {
+
+      if(r.length < 6) return;
+
+      let testNo = r[1];
+      let word   = r[3];
+      let result = r[4];
+      let time   = r[5];
+
+      if(!map[testNo]){
+        map[testNo] = {
+          words: [],
+          correct: 0,
+          total: 0,
+          time: time
+        };
+      }
+
+      map[testNo].words.push({
+        word,
+        result
+      });
+
+      map[testNo].total++;
+
+      if(result === "Correct"){
+        map[testNo].correct++;
+      }
+
+    });
+
+    // ===== RENDER =====
     const tbody = document.querySelector("#table tbody");
     tbody.innerHTML = "";
 
-    // bỏ header
-    rows.slice(1).forEach(r => {
-      if (r.length < 6) return; // đảm bảo đủ cột
+    Object.keys(map).sort((a,b)=>a-b).forEach(testNo => {
 
-      const tr = document.createElement("tr");
+      let obj = map[testNo];
+
+      let percent = Math.round(obj.correct / obj.total * 100);
+
+      // build word list
+      let wordHTML = obj.words.map(w => {
+        return `<span class="${w.result==='Correct'?'correct':'wrong'}">
+          ${w.word} (${w.result==='Correct'?'✅':'❌'})
+        </span>`;
+      }).join(", ");
+
+      let tr = document.createElement("tr");
+
       tr.innerHTML = `
-        <td>${r[1]}</td>
-        <td>${r[2]}</td>
-        <td>${r[3]}</td>
-        <td class="${r[4] === 'Correct' ? 'correct' : 'wrong'}">${r[4]}</td>
-        <td>${r[5]}</td>
+        <td>${testNo}</td>
+        <td class="wordList">${wordHTML}</td>
+        <td>${obj.correct}/${obj.total} (${percent}%)</td>
+        <td>${obj.time}</td>
       `;
+
       tbody.appendChild(tr);
+
     });
 
-  } catch (err) {
+  }catch(err){
     console.error(err);
-    alert("Không tải được dữ liệu CSV.");
+    alert("Không tải được dữ liệu");
   }
 }
+
 </script>
 
 </body>
