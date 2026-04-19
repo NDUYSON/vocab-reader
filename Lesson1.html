@@ -16,8 +16,8 @@ button { margin: 5px; padding: 10px; }
 
 <body>
 
-<h2>📘 Section1_２０２６年４月</h2>
-
+<h2>📘 Part1: 文法 x 単語</h2>
+<h3>📘 Section1 動詞と文例、自制</h3>
 <button onclick="play()">▶️ Play</button>
 <button onclick="pause()">⏸ Pause</button>
 <button onclick="resume()">▶️ Resume</button>
@@ -136,16 +136,46 @@ const speedValue = document.getElementById("speedValue");
 speedSlider.oninput = () => speedValue.innerText = speedSlider.value;
 function getRate(){ return parseFloat(speedSlider.value); }
 
-// ===== SPEAK =====
+// ===== SPEECH CONTROL =====
 const synth = window.speechSynthesis;
+let isPaused = false;
+let isStopped = false;
+let currentUtterance = null;
+
 function speak(text, lang){
-  return new Promise(r=>{
-    let u=new SpeechSynthesisUtterance(text);
-    u.rate = lang.includes("en") ? getRate() : 1;
-    u.onend = ()=>setTimeout(r,2000);
+  return new Promise(resolve=>{
+    if(isStopped) return resolve();
+
+    const u = new SpeechSynthesisUtterance(text);
+    u.lang = lang;
+
+    if(lang.includes("en")) u.rate = getRate();
+    else u.rate = 1;
+
+    currentUtterance = u;
+
+    u.onend = ()=> setTimeout(resolve, 500);
     synth.speak(u);
   });
 }
+
+// ===== CONTROL BUTTONS =====
+function pause(){
+  isPaused = true;
+  synth.pause();
+}
+
+function resume(){
+  isPaused = false;
+  synth.resume();
+}
+
+function stop(){
+  isStopped = true;
+  synth.cancel();
+}
+
+// ===== PLAY =====
 async function play() {
     isStopped = false;
     isPaused = false;
@@ -164,15 +194,21 @@ async function play() {
 
         let word = rows[i].cells[1].innerText;
         let jp = rows[i].cells[5].innerText;
-		let example = rows[i].cells[6].innerText;
-        
-		await speak(word, "en-GB");
+        let example = rows[i].cells[6].innerText;
+
+        // ✅ WORD → US
+        await speak(word, "en-US");
+
+        // ✅ JP → Japanese
         await speak(jp, "ja-JP");
-		await speak(example, "en-GB"); // đọc ví dụ (UK)
-		
+
+        // ✅ EXAMPLE → US
+        await speak(example, "en-US");
+
         rows[i].classList.remove("active");
     }
 }
+
 // ===== PRACTICE =====
 const countSelect = document.getElementById("count");
 for(let i=1;i<=data.length;i++){
@@ -187,8 +223,8 @@ let testNo = parseInt(localStorage.getItem("testNo")||"0");
 function startPractice(){
   let count = parseInt(countSelect.value);
 
-  list = data.slice(0, count); // chỉ lấy từ 1 → count
-  list = list.sort(()=>Math.random()-0.5); // random trong phạm vi
+  list = data.slice(0, count);
+  list = list.sort(()=>Math.random()-0.5);
 
   index=0;
   results=[];
@@ -271,7 +307,6 @@ function finish(){
 // ===== SHARE =====
 function shareToGoogle(){
   const FORM_URL="https://docs.google.com/forms/d/e/1FAIpQLSfMzeKxzFSCFXu6ang3xAtBXe4WxtABD5O3ET2wq7WLA_Cyvg/formResponse";
-
   const user="YENNHI";
 
   results.forEach(r=>{
