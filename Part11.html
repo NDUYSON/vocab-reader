@@ -6,11 +6,36 @@
 
 <style>
 body { font-family: Arial; padding: 20px; }
-table { border-collapse: collapse; width: 100%; margin-top: 10px; }
-th, td { border: 1px solid #ccc; padding: 6px; }
-th { background: #f0f0f0; }
-tr.active { background-color: #ffeeba; }
+
+table {
+  border-collapse: collapse;
+  width: 100%;
+  margin-top: 10px;
+}
+
+th, td {
+  border: 1px solid #ccc;
+  padding: 6px;
+}
+
+th {
+  background: #f0f0f0;
+  position: sticky;
+  top: 0;
+  z-index: 2;
+}
+
+tr.active {
+  background-color: #ffeeba;
+  transform: scale(1.01);
+  transition: 0.2s;
+}
+
 button { margin: 5px; padding: 10px; }
+
+html {
+  scroll-behavior: smooth;
+}
 </style>
 </head>
 
@@ -204,6 +229,7 @@ function renderTable(){
   tbody.innerHTML="";
   data.forEach((row,i)=>{
     let tr=document.createElement("tr");
+    tr.id = "row-" + i; // 🔥 thêm id để scroll
     tr.innerHTML=`<td>${i+1}</td>`+row.map(c=>`<td>${c}</td>`).join("");
     tbody.appendChild(tr);
   });
@@ -247,7 +273,29 @@ function speak(text,lang){
 // ===== CONTROL =====
 function pause(){ isPaused=true; synth.pause(); }
 function resume(){ isPaused=false; synth.resume(); }
-function stop(){ isStopped=true; synth.cancel(); }
+function stop(){ isStopped=true; synth.cancel(); clearHighlight(); }
+
+// ===== 🔥 HIGHLIGHT + SCROLL =====
+function highlightRow(i){
+  clearHighlight();
+
+  const row = document.getElementById("row-"+i);
+  if(!row) return;
+
+  row.classList.add("active");
+
+  // 🔥 scroll vào giữa màn hình
+  row.scrollIntoView({
+    behavior: "smooth",
+    block: "center"
+  });
+}
+
+function clearHighlight(){
+  document.querySelectorAll("#table tbody tr").forEach(r=>{
+    r.classList.remove("active");
+  });
+}
 
 // ===== PLAY =====
 async function play(){
@@ -264,7 +312,8 @@ async function play(){
       await new Promise(r=>setTimeout(r,200));
     }
 
-    rows[i].classList.add("active");
+    // 🔥 highlight + scroll
+    highlightRow(i);
 
     let word=rows[i].cells[1].innerText;
     let jp=rows[i].cells[5].innerText;
@@ -273,9 +322,9 @@ async function play(){
     await speak(word,"en-US");
     await speak(jp,"ja-JP");
     await speak(ex,"en-US");
-
-    rows[i].classList.remove("active");
   }
+
+  clearHighlight();
 }
 
 // ===== PRACTICE =====
