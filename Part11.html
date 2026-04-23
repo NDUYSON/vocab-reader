@@ -61,8 +61,8 @@ Speed:
 <th>Word</th>
 <th>IPA</th>
 <th>Type</th>
-<th>Meaning VI</th>
-<th>Meaning JP</th>
+<th>Meaning VNM</th>
+<th>Meaning JPN</th>
 <th>Example</th>
 </tr>
 </thead>
@@ -257,19 +257,39 @@ const synth=window.speechSynthesis;
 let isPaused=false;
 let isStopped=false;
 
-function speak(text,lang){
+let voices = [];
+
+function loadVoices(){
+  voices = speechSynthesis.getVoices();
+}
+speechSynthesis.onvoiceschanged = loadVoices;
+
+function getUSVoice(){
+  return voices.find(v => v.lang === "en-US")
+      || voices.find(v => v.lang.startsWith("en"))
+      || null;
+}
+
+function speak(text, lang){
   return new Promise(resolve=>{
     if(isStopped) return resolve();
 
-    let u=new SpeechSynthesisUtterance(text);
-    u.lang=lang;
-    u.rate=lang.includes("en")?getRate():1;
+    let u = new SpeechSynthesisUtterance(text);
+    u.rate = lang.includes("en") ? getRate() : 1;
 
-    u.onend=()=>setTimeout(resolve,400);
-    synth.speak(u);
+    // 🔥 ưu tiên voice US
+    if(lang.includes("en")){
+      const v = getUSVoice();
+      if(v) u.voice = v;
+      u.lang = v?.lang || "en-US";
+    }else{
+      u.lang = "ja-JP";
+    }
+
+    u.onend = ()=>setTimeout(resolve,400);
+    speechSynthesis.speak(u);
   });
 }
-
 // ===== CONTROL =====
 function pause(){ isPaused=true; synth.pause(); }
 function resume(){ isPaused=false; synth.resume(); }
