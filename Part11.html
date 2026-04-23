@@ -265,7 +265,7 @@ function loadVoices(){
 speechSynthesis.onvoiceschanged = loadVoices;
 
 function getUSVoice(){
-  return voices.find(v => v.lang === "en-US")
+  return voices.find(v => v.lang === "en")
       || voices.find(v => v.lang.startsWith("en"))
       || null;
 }
@@ -281,7 +281,7 @@ function speak(text, lang){
     if(lang.includes("en")){
       const v = getUSVoice();
       if(v) u.voice = v;
-      u.lang = v?.lang || "en-US";
+      u.lang = v?.lang || "en";
     }else{
       u.lang = "ja-JP";
     }
@@ -339,9 +339,9 @@ async function play(){
     let jp=rows[i].cells[5].innerText;
     let ex=rows[i].cells[6].innerText;
 
-    await speak(word,"en-US");
+    await speak(word,"en");
     await speak(jp,"ja-JP");
-    await speak(ex,"en-US");
+    await speak(ex,"en");
   }
 
   clearHighlight();
